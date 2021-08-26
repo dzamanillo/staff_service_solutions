@@ -18,9 +18,11 @@
 	},
 	"homepage": "https://github.com/dzamanillo/staff_service_solutions#readme",
 	"dependencies": {
-		"console.table": "^0.10.0",
+		"console-table-printer": "^2.10.0",
+		"dotenv": "^10.0.0",
 		"express": "^4.17.1",
 		"inquirer": "^8.1.2",
-		"mysql2": "^2.3.0"
+		"mysql2": "^2.3.0",
+		"util": "^0.12.4"
 	}
 }

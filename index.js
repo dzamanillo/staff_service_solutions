@@ -1,10 +1,45 @@
-const express = require("express");
-const router = express.Router();
 const inquirer = require("inquirer");
-const cTable = require("console.table");
+const {
+	viewAllEmployees,
+	viewAllEmployeesByDepartment,
+	addEmployee,
+	removeEmployee,
+	updateEmployee,
+	updateEmployeeRole,
+	updateEmployeeManager,
+	viewAllEmployeesByManager,
+} = require("./routes/employeeRoutes");
+const db = require("./db/connection");
 
-router.use(require("./routes/employeeRoutes"));
+// Arrays
 
+const nameArr = [];
+const sqlName = `SELECT CONCAT(employee.first_name, " ", employee.last_name) AS name FROM employee`;
+db.query(sqlName).then((res) => {
+	const roughArr = res;
+	roughArr.forEach((i) => {
+		nameArr.push(i.name);
+	});
+});
+
+const departmentArr = [];
+const sqlDepartment = `SELECT department.department_name FROM department`;
+db.query(sqlDepartment).then((res) => {
+	const roughArr = res;
+	roughArr.forEach((i) => {
+		departmentArr.push(i.department_name);
+	});
+});
+
+const roleArr = [];
+const sqlRole = `SELECT roles.title FROM roles`;
+db.query(sqlRole).then((res) => {
+	res.forEach((i) => {
+		roleArr.push(i.title);
+	});
+});
+
+// Inquire
 const initQuestion = () => {
 	return inquirer.prompt([
 		{
@@ -33,36 +68,138 @@ initQuestion().then((data) => {
 	const result = data.initQuestion;
 
 	if (result === "View All Employees") {
-		const viewAll = () =>
-			fetch("/employees", {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			}).then((data) => data.json());
-
-		console.log(viewAll);
+		viewAllEmployees();
 	}
 	if (result === "View All Employees By Department") {
-		// TODO
+		inquirer
+			.prompt({
+				type: "list",
+				name: "departments",
+				message: "Which department would you like to see?",
+				choices: departmentArr,
+			})
+			.then((res) => {
+				viewAllEmployeesByDepartment(res.departments);
+			});
 	}
 	if (result === "View All Employees By Manager") {
-		// TODO
+		viewAllEmployeesByManager(1);
 	}
 	if (result === "Add Employee") {
-		// TODO
+		inquirer
+			.prompt([
+				{
+					type: "text",
+					name: "newEmployeeFirst",
+					message: "First Name?",
+				},
+				{
+					type: "text",
+					name: "newEmployeeLast",
+					message: "Last Name?",
+				},
+				{
+					type: "list",
+					name: "newEmployeeRole",
+					message: "Role",
+					choices: roleArr,
+				},
+				{
+					type: "list",
+					name: "newEmployeeManager",
+					message: "Manager Name?",
+					choices: nameArr,
+				},
+			])
+			.then((res) =>
+				addEmployee(
+					res.newEmployeeFirst,
+					res.newEmployeeLast,
+					res.newEmployeeRole,
+					res.newEmployeeManager
+				)
+			)
+			.then(viewAllEmployees);
 	}
 	if (result === "Remove Employee") {
-		// TODO
+		inquirer
+			.prompt({
+				type: "list",
+				name: "deleteTarget",
+				message: "Which Employee Would You Like To Remove?",
+				choices: nameArr,
+			})
+			.then((res) => {
+				removeEmployee(res.deleteTarget);
+			})
+			.then(viewAllEmployees);
 	}
 	if (result === "Update Employee") {
-		// TODO
+		inquirer
+			.prompt([
+				{
+					type: "list",
+					name: "updateTarget",
+					message: "Which Employee Would You Like To Update?",
+					choices: nameArr,
+				},
+				{
+					type: "text",
+					name: "first",
+					message: "First Name",
+				},
+				{
+					type: "text",
+					name: "last",
+					message: "Last Name",
+				},
+			])
+			.then((res) => {
+				updateEmployee(res.updateTarget, res.first, res.last);
+			})
+			.then(viewAllEmployees);
 	}
 	if (result === "Update Employee Role") {
-		// TODO
+		inquirer
+			.prompt([
+				{
+					type: "list",
+					name: "updateTarget",
+					message: "Which Employee Would You Like To Update?",
+					choices: nameArr,
+				},
+				{
+					type: "list",
+					name: "newRole",
+					message: "New Role",
+					choices: roleArr,
+				},
+			])
+			.then((res) => {
+				updateEmployeeRole(res.updateTarget, res.newRole);
+			})
+			.then(viewAllEmployees);
 	}
 	if (result === "Update Employee Manager") {
-		// TODO
+		inquirer
+			.prompt([
+				{
+					type: "list",
+					name: "updateTarget",
+					message: "Which Employee Would You Like To Update?",
+					choices: nameArr,
+				},
+				{
+					type: "list",
+					name: "newManager",
+					message: "New Manager",
+					choices: nameArr,
+				},
+			])
+			.then((res) => {
+				updateEmployeeManager(res.updateTarget, res.newManager);
+			})
+			.then(viewAllEmployees);
 	}
 	if (result === "View All Roles") {
 		// TODO
