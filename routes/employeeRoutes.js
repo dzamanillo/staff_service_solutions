@@ -1,5 +1,4 @@
 const db = require("../db/connection");
-const inputCheck = require("../utils/inputCheck");
 const { printTable } = require("console-table-printer");
 
 // View All Employees

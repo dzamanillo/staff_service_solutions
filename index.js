@@ -26,6 +26,7 @@ const departmentArr = [];
 const sqlDepartment = `SELECT department.department_name FROM department`;
 db.query(sqlDepartment).then((res) => {
 	const roughArr = res;
+
 	roughArr.forEach((i) => {
 		departmentArr.push(i.department_name);
 	});
@@ -38,6 +39,18 @@ db.query(sqlRole).then((res) => {
 		roleArr.push(i.title);
 	});
 });
+
+// Functions
+const getNameId = (name) => {
+	const employeeName = name.split(" ");
+
+	const sql = `SELECT employee.id, employee.first_name, employee.last_name FROM employee WHERE employee.first_name = ? AND employee.last_name = ?`;
+	const params = [employeeName[0], employeeName[1]];
+
+	db.query(sql, params).then((res) => {
+		return res[0].id;
+	});
+};
 
 // Inquire
 const initQuestion = () => {
@@ -68,7 +81,7 @@ initQuestion().then((data) => {
 	const result = data.initQuestion;
 
 	if (result === "View All Employees") {
-		viewAllEmployees();
+		viewAllEmployees().then(initQuestion);
 	}
 	if (result === "View All Employees By Department") {
 		inquirer
@@ -80,7 +93,8 @@ initQuestion().then((data) => {
 			})
 			.then((res) => {
 				viewAllEmployeesByDepartment(res.departments);
-			});
+			})
+			.then(initQuestion);
 	}
 	if (result === "View All Employees By Manager") {
 		viewAllEmployeesByManager(1);
@@ -119,7 +133,8 @@ initQuestion().then((data) => {
 					res.newEmployeeManager
 				)
 			)
-			.then(viewAllEmployees);
+			.then(viewAllEmployees)
+			.then(initQuestion);
 	}
 	if (result === "Remove Employee") {
 		inquirer
@@ -130,9 +145,12 @@ initQuestion().then((data) => {
 				choices: nameArr,
 			})
 			.then((res) => {
-				removeEmployee(res.deleteTarget);
+				const targetId = getNameId(JSON.stringify(res.deleteTarget));
+
+				removeEmployee(targetId);
 			})
-			.then(viewAllEmployees);
+			.then(viewAllEmployees)
+			.then(initQuestion);
 	}
 	if (result === "Update Employee") {
 		inquirer
@@ -157,7 +175,8 @@ initQuestion().then((data) => {
 			.then((res) => {
 				updateEmployee(res.updateTarget, res.first, res.last);
 			})
-			.then(viewAllEmployees);
+			.then(viewAllEmployees)
+			.then(initQuestion);
 	}
 	if (result === "Update Employee Role") {
 		inquirer
@@ -178,7 +197,8 @@ initQuestion().then((data) => {
 			.then((res) => {
 				updateEmployeeRole(res.updateTarget, res.newRole);
 			})
-			.then(viewAllEmployees);
+			.then(viewAllEmployees)
+			.then(initQuestion);
 	}
 	if (result === "Update Employee Manager") {
 		inquirer
@@ -199,7 +219,8 @@ initQuestion().then((data) => {
 			.then((res) => {
 				updateEmployeeManager(res.updateTarget, res.newManager);
 			})
-			.then(viewAllEmployees);
+			.then(viewAllEmployees)
+			.then(initQuestion);
 	}
 	if (result === "View All Roles") {
 		// TODO
