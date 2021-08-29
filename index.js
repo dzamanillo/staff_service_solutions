@@ -10,6 +10,12 @@ const {
 	viewAllEmployeesByManager,
 } = require("./routes/employeeRoutes");
 const { viewAllRoles, addRole, removeRole } = require("./routes/roleRoutes");
+const {
+	viewAllDepartments,
+	addDepartment,
+	removeDepartment,
+	departmentBudget,
+} = require("./routes/departmentRoutes");
 const db = require("./db/connection");
 
 // Arrays
@@ -136,9 +142,26 @@ const questions = () => {
 			}
 			loop();
 		}
-		//TODO
 		if (result === "View All Employees By Manager") {
-			viewAllEmployeesByManager(1);
+			async function viewManager() {
+				const response = await inquirer.prompt({
+					type: "list",
+					name: "manager",
+					message: "Which managers employees would you like to see?",
+					choices: nameArr,
+				});
+
+				const value = await getNameId(response.manager);
+
+				viewAllEmployeesByManager(value);
+			}
+			async function loop() {
+				await viewManager();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Add Employee") {
 			async function add() {
@@ -368,8 +391,79 @@ const questions = () => {
 			}
 			loop();
 		}
+		if (result === "View All Departments") {
+			async function loop() {
+				await viewAllDepartments();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
+		}
+		if (result === "Add Department") {
+			async function newDep() {
+				const response = await inquirer.prompt([
+					{
+						type: "text",
+						name: "newDep",
+						message: "Department Name?",
+					},
+				]);
+
+				addDepartment(response.newDep);
+			}
+			async function loop() {
+				await newDep();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
+		}
+		if (result === "Remove Department") {
+			async function departmentRemove() {
+				const response = await inquirer.prompt({
+					type: "list",
+					name: "deleteTarget",
+					message: "Which Department Would You Like To Remove?",
+					choices: departmentArr,
+				});
+
+				const role = await getDepartmentId(response.deleteTarget);
+				removeDepartment(role);
+			}
+			async function loop() {
+				await departmentRemove();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
+		}
+		if (result === "View Department Budget") {
+			async function budget() {
+				const response = await inquirer.prompt([
+					{
+						type: "list",
+						name: "department",
+						message: "Select Department",
+						choices: departmentArr,
+					},
+				]);
+				const value = await getDepartmentId(response.department);
+				departmentBudget(value);
+			}
+			async function loop() {
+				await budget();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
+		}
 		if (result === "Quit") {
 			console.log("Thank you. Have a great day.");
+			process.exit();
 		}
 	});
 };

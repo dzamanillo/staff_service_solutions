@@ -3,8 +3,8 @@ const { printTable } = require("console-table-printer");
 
 // View All Employees
 const viewAllEmployees = () => {
+	// const sql = `SELECT a.employee.id, CONCAT(a.employee.first_name, " ", a.employee.last_name) AS name, roles.title, roles.salary, CONCAT(b.employee.first_name, " ", b.employee.last_name) AS manager, FROM employee a LEFT JOIN roles ON roles.id = employee.role_id LEFT JOIN employee b ON b.employee.id = a.employee.manager_id`;
 	const sql = `SELECT * FROM employee`;
-
 	db.query(sql).then((res) => printTable(res));
 };
 
@@ -15,9 +15,8 @@ const viewAllEmployeesByDepartment = (id) => {
 	db.query(sql, params).then((res) => printTable(res));
 };
 
-//TODO View All Employees By Manager
 const viewAllEmployeesByManager = (id) => {
-	const sql = `SELECT CONCAT(a.first_name, " ", a.last_name) AS name, b.manager_id FROM employee.a, employee.b WHERE a.manager_id = b.id`;
+	const sql = `SELECT a.id, a.first_name, a.last_name FROM employee a LEFT JOIN employee b ON b.id = a.manager_id WHERE a.manager_id = ?`;
 	const params = id;
 	db.query(sql, params).then((res) => printTable(res));
 };
