@@ -43,39 +43,39 @@ db.query(sqlRole).then((res) => {
 
 // Functions
 //* GET NAME
-const getNameId = (name) => {
-	const employeeName = name.split(" ");
-	// console.log("employeeName: ", employeeName);
-
-	const sql = `SELECT employee.id, employee.first_name, employee.last_name FROM employee WHERE employee.first_name = ? AND employee.last_name = ?`;
-	const params = [employeeName[0], employeeName[1]];
-
-	return db.query(sql, params).then((res) => {
-		// console.log("res: ", res);
-		// console.log("res[0].id: ", res[0].id);
-		return res[0].id;
-	});
-};
+async function getNameId(name) {
+	const employeeName = await name.split(" ");
+	const sql =
+		await `SELECT employee.id, employee.first_name, employee.last_name FROM employee WHERE employee.first_name = ? AND employee.last_name = ?`;
+	const params = await [employeeName[0], employeeName[1]];
+	const request = await db.query(sql, params);
+	const value = await request[0].id;
+	return value;
+}
 
 //* GET ROLE
-const getRoleId = (role) => {
-	const sql = `Select roles.id, roles.title FROM roles WHERE roles.title = ?`;
-	const params = role;
+async function getRoleId(role) {
+	const sql =
+		await `Select roles.id, roles.title FROM roles WHERE roles.title = ?`;
+	const params = await role;
 
-	return db.query(sql, params).then((res) => {
-		return res[0].id;
-	});
-};
+	const request = await db.query(sql, params);
+
+	const value = await request[0].id;
+	return value;
+}
 
 //* GET Department
-const getDepartmentId = (department) => {
-	const sql = `Select department.id, department.department_name FROM department WHERE department.department_name = ?`;
-	const params = department;
+async function getDepartmentId(department) {
+	const sql =
+		await `Select department.id, department.department_name FROM department WHERE department.department_name = ?`;
+	const params = await department;
 
-	return db.query(sql, params).then((res) => {
-		return res[0].id;
-	});
-};
+	const request = await db.query(sql, params);
+
+	const value = await request[0].id;
+	return value;
+}
 
 // Inquire
 const initQuestion = () => {
@@ -93,6 +93,10 @@ const initQuestion = () => {
 				"Update Employee",
 				"Update Employee Role",
 				"Update Employee Manager",
+				"View All Departments",
+				"View Department Budget",
+				"Add Department",
+				"Remove Department",
 				"View All Roles",
 				"Add Role",
 				"Remove Role",
@@ -111,24 +115,34 @@ const questions = () => {
 			viewAllEmployees();
 		}
 		if (result === "View All Employees By Department") {
-			inquirer
-				.prompt({
+			async function viewByDepartment() {
+				const response = await inquirer.prompt({
 					type: "list",
 					name: "departments",
 					message: "Which department would you like to see?",
 					choices: departmentArr,
-				})
-				.then((res) => {
-					viewAllEmployeesByDepartment(res.departments);
-				})
-				.then(initQuestion);
+				});
+
+				const depVal = await getDepartmentId(response.departments);
+				console.log("depVal: ", depVal);
+
+				viewAllEmployeesByDepartment(depVal);
+			}
+			async function loop() {
+				await viewByDepartment();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
+		//TODO
 		if (result === "View All Employees By Manager") {
 			viewAllEmployeesByManager(1);
 		}
 		if (result === "Add Employee") {
-			inquirer
-				.prompt([
+			async function add() {
+				const response = await inquirer.prompt([
 					{
 						type: "text",
 						name: "newEmployeeFirst",
@@ -151,38 +165,59 @@ const questions = () => {
 						message: "Manager Name?",
 						choices: nameArr,
 					},
-				])
-				.then((res) => {
-					const role = getRoleId(res.newEmployeeRole).then((res) => {
-						console.log("res: ", res);
-						return res;
-					});
-					console.log("role: ", role);
-					const manager = getNameId(res.newEmployeeManager).then((res) => {
-						console.log("res: ", res);
-						return res;
-					});
-					console.log("manager: ", manager);
-					addEmployee(res.newEmployeeFirst, res.newEmployeeLast, role, manager);
-				});
+				]);
+				console.log("response: ", response);
+
+				const roleVal = await getRoleId(response.newEmployeeRole);
+				console.log("roleVal: ", roleVal);
+
+				const nameVal = await getNameId(response.newEmployeeManager);
+				console.log("nameVal: ", nameVal);
+
+				addEmployee(
+					response.newEmployeeFirst,
+					response.newEmployeeLast,
+					roleVal,
+					nameVal
+				);
+			}
+			async function loop() {
+				await add();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Remove Employee") {
-			inquirer
-				.prompt({
+			async function remove() {
+				const response = await inquirer.prompt({
 					type: "list",
 					name: "deleteTarget",
 					message: "Which Employee Would You Like To Remove?",
 					choices: nameArr,
-				})
-				.then((res) => {
-					getNameId(res.deleteTarget).then((res) => {
-						removeEmployee(res);
-					});
 				});
+				console.log("response: ", response);
+
+				const value = await response.deleteTarget;
+				console.log("value: ", value);
+
+				const nameId = await getNameId(value);
+				console.log("nameId: ", nameId);
+
+				removeEmployee(nameId);
+			}
+			async function loop() {
+				await remove();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Update Employee") {
-			inquirer
-				.prompt([
+			async function update() {
+				const response = await inquirer.prompt([
 					{
 						type: "list",
 						name: "updateTarget",
@@ -199,16 +234,23 @@ const questions = () => {
 						name: "last",
 						message: "Last Name",
 					},
-				])
-				.then((res) => {
-					getNameId(res.updateTarget).then((value) => {
-						updateEmployee(value, res.first, res.last);
-					});
-				});
+				]);
+
+				const nameID = await getNameId(response.updateTarget);
+
+				updateEmployee(nameID, response.first, response.last);
+			}
+			async function loop() {
+				await update();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Update Employee Role") {
-			inquirer
-				.prompt([
+			async function roleUpdate() {
+				const response = await inquirer.prompt([
 					{
 						type: "list",
 						name: "updateTarget",
@@ -221,14 +263,23 @@ const questions = () => {
 						message: "New Role",
 						choices: roleArr,
 					},
-				])
-				.then((res) => {
-					updateEmployeeRole(res.updateTarget, res.newRole);
-				});
+				]);
+
+				const name = await getNameId(response.updateTarget);
+				const role = await getRoleId(response.newRole);
+				updateEmployeeRole(name, role);
+			}
+			async function loop() {
+				await roleUpdate();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Update Employee Manager") {
-			inquirer
-				.prompt([
+			async function updateManager() {
+				const response = await inquirer.prompt([
 					{
 						type: "list",
 						name: "updateTarget",
@@ -241,19 +292,33 @@ const questions = () => {
 						message: "New Manager",
 						choices: nameArr,
 					},
-				])
-				.then((res) => {
-					updateEmployeeManager(res.updateTarget, res.newManager);
-				})
-				.then(viewAllEmployees)
-				.then(initQuestion);
+				]);
+
+				const target = await getNameId(response.updateTarget);
+				const manager = await getNameId(response.newManager);
+
+				updateEmployeeManager(target, manager);
+			}
+			async function loop() {
+				await updateManager();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "View All Roles") {
-			viewAllRoles();
+			async function loop() {
+				await viewAllRoles();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Add Role") {
-			inquirer
-				.prompt([
+			async function role() {
+				const response = await inquirer.prompt([
 					{
 						type: "text",
 						name: "roleName",
@@ -270,30 +335,38 @@ const questions = () => {
 						message: "Role Department?",
 						choices: departmentArr,
 					},
-				])
-				.then((res) => {
-					addRole(
-						res.roleName,
-						res.roleSalary,
-						getDepartmentId(res.roleDepartment).then((res) => {
-							return res;
-						})
-					);
-				});
+				]);
+
+				const dep = await getDepartmentId(response.roleDepartment);
+				addRole(response.roleName, response.roleSalary, dep);
+			}
+			async function loop() {
+				await role();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Remove Role") {
-			inquirer
-				.prompt({
+			async function roleRemove() {
+				const response = await inquirer.prompt({
 					type: "list",
 					name: "deleteTarget",
 					message: "Which role Would You Like To Remove?",
 					choices: roleArr,
-				})
-				.then((res) => {
-					getRoleId(res.deleteTarget).then((res) => {
-						removeRole(res);
-					});
 				});
+
+				const role = await getRoleId(response.deleteTarget);
+				removeRole(role);
+			}
+			async function loop() {
+				await roleRemove();
+				console.log("\n \n \n");
+				await questions();
+				console.log("\n \n \n");
+			}
+			loop();
 		}
 		if (result === "Quit") {
 			console.log("Thank you. Have a great day.");

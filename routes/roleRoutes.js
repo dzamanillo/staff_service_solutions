@@ -7,7 +7,6 @@ const viewAllRoles = () => {
 	db.query(sql).then((res) => printTable(res));
 };
 
-//TODO Add Role
 const addRole = (title, salary, dep) => {
 	const sql = `INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)`;
 	const params = [title, salary, dep];
