@@ -3,7 +3,11 @@ const { printTable } = require("console-table-printer");
 
 // View All Roles
 const viewAllRoles = () => {
-	const sql = `SELECT * FROM roles`;
+	const sql = `SELECT roles.id, roles.title, department.department_name, roles.salary 
+				FROM roles
+				LEFT JOIN department ON
+				department.id = roles.department_id
+				ORDER BY department_name, salary DESC`;
 	db.query(sql).then((res) => printTable(res));
 };
 

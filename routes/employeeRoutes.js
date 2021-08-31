@@ -3,20 +3,47 @@ const { printTable } = require("console-table-printer");
 
 // View All Employees
 const viewAllEmployees = () => {
-	// const sql = `SELECT a.employee.id, CONCAT(a.employee.first_name, " ", a.employee.last_name) AS name, roles.title, roles.salary, CONCAT(b.employee.first_name, " ", b.employee.last_name) AS manager, FROM employee a LEFT JOIN roles ON roles.id = employee.role_id LEFT JOIN employee b ON b.employee.id = a.employee.manager_id`;
-	const sql = `SELECT * FROM employee`;
+	const sql = `SELECT e.id, 
+				CONCAT(e.first_name, " ", e.last_name) AS Employee,
+				roles.title,
+				department.department_name,
+				roles.salary,
+				CONCAT(m.first_name, " ", m.last_name) AS Manager
+				FROM employee e
+				LEFT JOIN employee m ON
+					m.id = e.manager_id
+				LEFT JOIN roles ON
+					roles.id = e.role_id
+				LEFT JOIN department ON
+					department.id = roles.department_id`;
 	db.query(sql).then((res) => printTable(res));
 };
 
 // View All Employees By Department
 const viewAllEmployeesByDepartment = (id) => {
-	const sql = `SELECT employee.id ,CONCAT(employee.first_name, " ", employee.last_name) AS name, roles.title, roles.salary, department.department_name AS department FROM employee LEFT JOIN roles on employee.role_id = roles.id LEFT JOIN department on roles.department_id = department.id WHERE department.id = ?`;
+	const sql = `SELECT employee.id ,
+				CONCAT(employee.first_name, " ", 
+				employee.last_name) AS name, 
+				roles.title, roles.salary, 
+				department.department_name AS department 
+				FROM employee 
+				LEFT JOIN roles ON employee.role_id = roles.id 
+				LEFT JOIN department ON roles.department_id = department.id 
+				WHERE department.id = ?`;
 	const params = id;
 	db.query(sql, params).then((res) => printTable(res));
 };
 
 const viewAllEmployeesByManager = (id) => {
-	const sql = `SELECT a.id, a.first_name, a.last_name FROM employee a LEFT JOIN employee b ON b.id = a.manager_id WHERE a.manager_id = ?`;
+	const sql = `SELECT e.id,
+				CONCAT(e.first_name, " ", e.last_name) AS employee,
+				roles.title, roles.salary
+				FROM employee e
+				LEFT JOIN roles ON
+					roles.id = e.role_id
+				LEFT JOIN employee m ON
+					m.id = e.manager_id
+				WHERE e.manager_id = ?`;
 	const params = id;
 	db.query(sql, params).then((res) => printTable(res));
 };
