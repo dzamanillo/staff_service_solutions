@@ -18,71 +18,6 @@ const {
 } = require("./routes/departmentRoutes");
 const db = require("./db/connection");
 
-// Arrays
-
-const nameArr = [];
-const sqlName = `SELECT CONCAT(employee.first_name, " ", employee.last_name) AS name FROM employee`;
-db.query(sqlName).then((res) => {
-	const roughArr = res;
-	roughArr.forEach((i) => {
-		nameArr.push(i.name);
-	});
-});
-
-const departmentArr = [];
-const sqlDepartment = `SELECT department.department_name FROM department`;
-db.query(sqlDepartment).then((res) => {
-	const roughArr = res;
-
-	roughArr.forEach((i) => {
-		departmentArr.push(i.department_name);
-	});
-});
-
-const roleArr = [];
-const sqlRole = `SELECT roles.title FROM roles`;
-db.query(sqlRole).then((res) => {
-	res.forEach((i) => {
-		roleArr.push(i.title);
-	});
-});
-
-// Functions
-//* GET NAME
-async function getNameId(name) {
-	const employeeName = await name.split(" ");
-	const sql =
-		await `SELECT employee.id, employee.first_name, employee.last_name FROM employee WHERE employee.first_name = ? AND employee.last_name = ?`;
-	const params = await [employeeName[0], employeeName[1]];
-	const request = await db.query(sql, params);
-	const value = await request[0].id;
-	return value;
-}
-
-//* GET ROLE
-async function getRoleId(role) {
-	const sql =
-		await `Select roles.id, roles.title FROM roles WHERE roles.title = ?`;
-	const params = await role;
-
-	const request = await db.query(sql, params);
-
-	const value = await request[0].id;
-	return value;
-}
-
-//* GET Department
-async function getDepartmentId(department) {
-	const sql =
-		await `Select department.id, department.department_name FROM department WHERE department.department_name = ?`;
-	const params = await department;
-
-	const request = await db.query(sql, params);
-
-	const value = await request[0].id;
-	return value;
-}
-
 // Inquire
 const initQuestion = () => {
 	return inquirer.prompt([
@@ -111,7 +46,33 @@ const initQuestion = () => {
 		},
 	]);
 };
-const questions = () => {
+const questions = async () => {
+	// Departments
+	const dep = await db.query(`SELECT * FROM department`);
+	const depArr = dep.map(({ id, department_name }) => ({
+		name: department_name,
+		value: id,
+	}));
+
+	// Employees
+	const employeeName = await db.query(
+		`SELECT employee.id, CONCAT(employee.first_name, " ", employee.last_name) AS name FROM employee ORDER BY id`
+	);
+	const empArr = employeeName.map(({ id, name }) => ({
+		name: name,
+		value: id,
+	}));
+
+	// Managers
+	const managerArr = empArr.concat({ name: "None", value: null });
+
+	// Roles
+	const role = await db.query(`SELECT * FROM roles`);
+	const roleArr = role.map(({ id, title }) => ({
+		name: title,
+		value: id,
+	}));
+
 	initQuestion().then((data) => {
 		const result = data.initQuestion;
 
@@ -126,13 +87,10 @@ const questions = () => {
 					type: "list",
 					name: "departments",
 					message: "Which department would you like to see?",
-					choices: departmentArr,
+					choices: depArr,
 				});
 
-				const depVal = await getDepartmentId(response.departments);
-				console.log("depVal: ", depVal);
-
-				viewAllEmployeesByDepartment(depVal);
+				viewAllEmployeesByDepartment(response.departments);
 			}
 			async function loop() {
 				await viewByDepartment();
@@ -148,12 +106,10 @@ const questions = () => {
 					type: "list",
 					name: "manager",
 					message: "Which managers employees would you like to see?",
-					choices: nameArr,
+					choices: empArr,
 				});
 
-				const value = await getNameId(response.manager);
-
-				viewAllEmployeesByManager(value);
+				viewAllEmployeesByManager(response.manager);
 			}
 			async function loop() {
 				await viewManager();
@@ -186,22 +142,16 @@ const questions = () => {
 						type: "list",
 						name: "newEmployeeManager",
 						message: "Manager Name?",
-						choices: nameArr,
+						choices: managerArr,
 					},
 				]);
 				console.log("response: ", response);
 
-				const roleVal = await getRoleId(response.newEmployeeRole);
-				console.log("roleVal: ", roleVal);
-
-				const nameVal = await getNameId(response.newEmployeeManager);
-				console.log("nameVal: ", nameVal);
-
 				addEmployee(
 					response.newEmployeeFirst,
 					response.newEmployeeLast,
-					roleVal,
-					nameVal
+					response.newEmployeeRole,
+					response.newEmployeeManager
 				);
 			}
 			async function loop() {
@@ -218,17 +168,10 @@ const questions = () => {
 					type: "list",
 					name: "deleteTarget",
 					message: "Which Employee Would You Like To Remove?",
-					choices: nameArr,
+					choices: empArr,
 				});
-				console.log("response: ", response);
 
-				const value = await response.deleteTarget;
-				console.log("value: ", value);
-
-				const nameId = await getNameId(value);
-				console.log("nameId: ", nameId);
-
-				removeEmployee(nameId);
+				removeEmployee(response.deleteTarget);
 			}
 			async function loop() {
 				await remove();
@@ -245,7 +188,7 @@ const questions = () => {
 						type: "list",
 						name: "updateTarget",
 						message: "Which Employee Would You Like To Update?",
-						choices: nameArr,
+						choices: empArr,
 					},
 					{
 						type: "text",
@@ -259,9 +202,7 @@ const questions = () => {
 					},
 				]);
 
-				const nameID = await getNameId(response.updateTarget);
-
-				updateEmployee(nameID, response.first, response.last);
+				updateEmployee(response.updateTarget, response.first, response.last);
 			}
 			async function loop() {
 				await update();
@@ -278,7 +219,7 @@ const questions = () => {
 						type: "list",
 						name: "updateTarget",
 						message: "Which Employee Would You Like To Update?",
-						choices: nameArr,
+						choices: empArr,
 					},
 					{
 						type: "list",
@@ -288,9 +229,7 @@ const questions = () => {
 					},
 				]);
 
-				const name = await getNameId(response.updateTarget);
-				const role = await getRoleId(response.newRole);
-				updateEmployeeRole(name, role);
+				updateEmployeeRole(response.updateTarget, response.newRole);
 			}
 			async function loop() {
 				await roleUpdate();
@@ -307,20 +246,17 @@ const questions = () => {
 						type: "list",
 						name: "updateTarget",
 						message: "Which Employee Would You Like To Update?",
-						choices: nameArr,
+						choices: empArr,
 					},
 					{
 						type: "list",
 						name: "newManager",
 						message: "New Manager",
-						choices: nameArr,
+						choices: managerArr,
 					},
 				]);
 
-				const target = await getNameId(response.updateTarget);
-				const manager = await getNameId(response.newManager);
-
-				updateEmployeeManager(target, manager);
+				updateEmployeeManager(response.updateTarget, response.newManager);
 			}
 			async function loop() {
 				await updateManager();
@@ -356,12 +292,15 @@ const questions = () => {
 						type: "list",
 						name: "roleDepartment",
 						message: "Role Department?",
-						choices: departmentArr,
+						choices: depArr,
 					},
 				]);
 
-				const dep = await getDepartmentId(response.roleDepartment);
-				addRole(response.roleName, response.roleSalary, dep);
+				addRole(
+					response.roleName,
+					response.roleSalary,
+					response.roleDepartment
+				);
 			}
 			async function loop() {
 				await role();
@@ -380,8 +319,7 @@ const questions = () => {
 					choices: roleArr,
 				});
 
-				const role = await getRoleId(response.deleteTarget);
-				removeRole(role);
+				removeRole(response.deleteTarget);
 			}
 			async function loop() {
 				await roleRemove();
@@ -426,11 +364,10 @@ const questions = () => {
 					type: "list",
 					name: "deleteTarget",
 					message: "Which Department Would You Like To Remove?",
-					choices: departmentArr,
+					choices: depArr,
 				});
 
-				const role = await getDepartmentId(response.deleteTarget);
-				removeDepartment(role);
+				removeDepartment(response.deleteTarget);
 			}
 			async function loop() {
 				await departmentRemove();
@@ -447,11 +384,11 @@ const questions = () => {
 						type: "list",
 						name: "department",
 						message: "Select Department",
-						choices: departmentArr,
+						choices: depArr,
 					},
 				]);
-				const value = await getDepartmentId(response.department);
-				departmentBudget(value);
+
+				departmentBudget(response.department);
 			}
 			async function loop() {
 				await budget();

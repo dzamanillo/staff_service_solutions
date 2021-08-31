@@ -20,7 +20,7 @@ const departmentBudget = (id) => {
 
 // Add Department
 const addDepartment = (id) => {
-	const sql = `INSERT INTO department (department_id) VALUES (?)`;
+	const sql = `INSERT INTO department (department_name) VALUES (?)`;
 	const params = [id];
 	db.query(sql, params).then((res) => console.log("New Department Added"));
 };

@@ -45,7 +45,14 @@ const viewAllEmployeesByManager = (id) => {
 					m.id = e.manager_id
 				WHERE e.manager_id = ?`;
 	const params = id;
-	db.query(sql, params).then((res) => printTable(res));
+	db.query(sql, params).then((res) => {
+		if (!res[0]) {
+			console.log("This Employee Does Not Manage Any Employees");
+			return;
+		}
+
+		printTable(res);
+	});
 };
 
 // Add Employee
