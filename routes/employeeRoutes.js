@@ -37,10 +37,12 @@ const viewAllEmployeesByDepartment = (id) => {
 const viewAllEmployeesByManager = (id) => {
 	const sql = `SELECT e.id,
 				CONCAT(e.first_name, " ", e.last_name) AS employee,
-				roles.title, roles.salary
+				roles.title, roles.salary, department.department_name
 				FROM employee e
 				LEFT JOIN roles ON
 					roles.id = e.role_id
+				LEFT JOIN department ON
+					department.id = roles.department_id
 				LEFT JOIN employee m ON
 					m.id = e.manager_id
 				WHERE e.manager_id = ?`;

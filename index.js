@@ -89,7 +89,6 @@ const questions = async () => {
 					message: "Which department would you like to see?",
 					choices: depArr,
 				});
-
 				viewAllEmployeesByDepartment(response.departments);
 			}
 			async function loop() {
